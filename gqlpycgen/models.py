@@ -1,6 +1,10 @@
 import json
 
+from jinja2 import Template
+
+
 LF = '\n'
+LFLF = '\n\n'
 LFTABTAB = '\n        '
 
 
@@ -30,6 +34,18 @@ class Field(object):
         return f"{self.name}: '{self.gtype}'"
 
 
+objectTemplate = Template("""class {{name}}(ObjectBase):
+    FIELDS = [{% for name in field_names %}"{{ name }}", {% endfor %}]
+    TYPES = {{ '{' }}{% for field in fields %}"{{ field.name }}": "{{ field.gtype }}"{% if not loop.last %}, {% endif %}{% endfor %}{{ '}' }}
+
+    def __init__(self, {% for field in fields %}{{ field }}{% if not loop.last %}, {% endif %}{% endfor %}):{% for field in fields %}
+        self.{{ field.name }}: '{{ field.gtype }}' = {{ field.name }}{% endfor %}
+
+
+
+""")
+
+
 class Object(object):
 
     def __init__(self, typeObj):
@@ -49,14 +65,7 @@ class Object(object):
         return list(deps)
 
     def toPython(self):
-        return f"""class {self.name}(object):
-    FIELDS = {json.dumps(self.field_names)}
-
-    def __init__(self, {", ".join(map(str, self.fields))}):
-        {LFTABTAB.join(map(lambda name: f'self.{name} = {name}', self.field_names))}
-
-
-"""
+        return objectTemplate.render(**self.__dict__)
 
     def generate_argument_list(self, fields):
         for field in fields:
@@ -65,7 +74,7 @@ class Object(object):
             if ftype:
                 self.fields.append(Field(name, ftype))
             else:
-                raise Warning(f'field {name} on {self.name}')
+                raise Warning(f'field {name} on {self.name}, type not understood')
 
 
 class InputObject(Object):
@@ -102,7 +111,7 @@ class Union(object):
         self.possible_types = [pt.get("name") for pt in typeObj.get("possibleTypes")]
 
     def toPython(self):
-        return f"""{self.name} = TypeVar('{self.name}', {", ".join(self.possible_types)})\n"""
+        return f"""{self.name} = Union[{", ".join(self.possible_types)}]\n"""
 
 
 class Scalar(object):
@@ -112,6 +121,76 @@ class Scalar(object):
 
     def toPython(self):
         return f"{self.name} = NewType('{self.name}', str)\n"
+
+
+queryMethodTemplate = Template("""
+    def {{name}}(self, {% for arg in args %}{{ arg }}{% if not loop.last %}, {% endif %}{% endfor %}) -> {{ returns }}:
+        args = [{% for arg in args %}"{{ arg }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+        variables = dict()
+        var_types = dict()
+{% for arg in args %}
+        if {{ arg.name }} is not None:
+            var_types["{{ arg.name }}"] = {{ arg.gtype }}
+            if hasattr({{ arg.name }}, "to_json"):
+                variables["{{ arg.name }}"] = {{ arg.name }}.to_json()
+            else:
+                variables["{{ arg.name }}"] = {{ arg.name }}
+{% endfor %}
+        query = self.prepare({{ returns }}, "{{ name }}", variables, var_types)
+        results = self.query(query, variables)
+        return {{ returns }}.from_json(results.get("{{ name }}"))
+""")
+
+
+class QueryMethod(object):
+
+    def __init__(self, typeObj):
+        self.name = typeObj.get("name")
+        self.returns = resolve_type(typeObj.get("type"))
+        self.args = []
+        self.generate_argument_list(typeObj.get("args"))
+
+    def generate_argument_list(self, fields):
+        for field in fields:
+            name = field.get("name")
+            ftype = resolve_type(field.get("type"))
+            if ftype:
+                self.args.append(Field(name, ftype))
+            else:
+                raise Warning(f'arg {name} on {self.name}, type not understood')
+
+    def toPython(self):
+        return queryMethodTemplate.render(**self.__dict__)
+
+
+class Query(object):
+
+    def __init__(self, typeObj):
+        self.methods = []
+        for field in typeObj.get("fields"):
+            if not field.get("name").startswith("_"):
+                method = QueryMethod(field)
+                self.methods.append(method)
+
+    def toPython(self):
+        return f"""class Query(QueryBase):
+{LF.join([method.toPython() for method in self.methods])}
+"""
+
+
+class Mutation(object):
+
+    def __init__(self, typeObj):
+        self.methods = []
+        for field in typeObj.get("fields"):
+            if not field.get("name").startswith("_"):
+                method = QueryMethod(field)
+                self.methods.append(method)
+
+    def toPython(self):
+        return f"""class Mutation(MutationBase):
+{LF.join([method.toPython() for method in self.methods])}
+"""
 
 
 def filter_enums(typeObjs):

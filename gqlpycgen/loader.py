@@ -83,19 +83,98 @@ schema_load_gql = """
       }
     }
     queryType {
+      name
+      interfaces {
+        name
+      }
       fields {
         name
+        isDeprecated
+        deprecationReason
+        description
         type {
           name
+          kind
+          ofType {
+            name
+            kind
+            ofType {
+              name
+              kind
+              ofType {
+                name
+                kind
+              }
+            }
+          }
         }
         args {
           name
           defaultValue
+          description
           type {
             name
             kind
-            inputFields {
+            ofType {
               name
+              kind
+              ofType {
+                name
+                kind
+                ofType {
+                  name
+                  kind
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    mutationType {
+      name
+      interfaces {
+        name
+      }
+      fields {
+        name
+        isDeprecated
+        deprecationReason
+        description
+        type {
+          name
+          kind
+          ofType {
+            name
+            kind
+            ofType {
+              name
+              kind
+              ofType {
+                name
+                kind
+              }
+            }
+          }
+        }
+        args {
+          name
+          defaultValue
+          description
+          type {
+            name
+            kind
+            ofType {
+              name
+              kind
+              ofType {
+                name
+                kind
+                ofType {
+                  name
+                  kind
+                }
+              }
             }
           }
         }
