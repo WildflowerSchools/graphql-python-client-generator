@@ -1,9 +1,10 @@
 import collections
 from typing import Dict, get_type_hints
 
-from gql import Client, gql
-from gql.transport.requests import RequestsHTTPTransport
+# from gql import Client, gql
+# from gql.transport.requests import RequestsHTTPTransport
 
+from gqlpycgen.client import Client
 
 MAX_DEPTH = 3
 
@@ -12,11 +13,13 @@ class QueryBase(object):
 
     def __init__(self, uri: str):
         self.uri = uri
-        self.client = Client(transport=RequestsHTTPTransport(uri, use_json=True))
+        # self.client = Client(transport=RequestsHTTPTransport(uri, use_json=True))
+        self.client = Client(uri)
 
     def query(self, query: str, variables: Dict) -> Dict:
         print(query)
-        gql_query = gql(query)
+        gql_query = query
+        # gql_query = gql(query)
         results = self.client.execute(gql_query, variables)
         print(results)
         return results
@@ -87,6 +90,8 @@ class ObjectBase(object):
 
     @classmethod
     def from_json(cls, obj: Dict):
+        if obj is None:
+            return None
         args = {}
         hints = get_type_hints(cls.__init__)
         for k, v in hints.items():
