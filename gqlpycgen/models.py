@@ -10,7 +10,7 @@ LFTABTAB = '\n        '
 
 def resolve_type(typeObj):
     if typeObj.get("kind") == "LIST":
-        return 'List[{}]'.format(typeObj.get("ofType").get("kind"))
+        return 'List[{}]'.format(resolve_type(typeObj.get("ofType")))
     if typeObj.get("kind") == "NON_NULL":
         ofType = typeObj.get("ofType")
         if ofType.get("kind") == "LIST":

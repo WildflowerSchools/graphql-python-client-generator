@@ -1,27 +1,25 @@
 import collections
 from typing import Dict, get_type_hints
 
-# from gql import Client, gql
-# from gql.transport.requests import RequestsHTTPTransport
-
 from gqlpycgen.client import Client
 
 MAX_DEPTH = 3
+ISO_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
+
+
+def timestamp():
+    return datetime.utcnow().strftime(ISO_FORMAT)
 
 
 class QueryBase(object):
 
     def __init__(self, uri: str):
         self.uri = uri
-        # self.client = Client(transport=RequestsHTTPTransport(uri, use_json=True))
         self.client = Client(uri)
 
     def query(self, query: str, variables: Dict) -> Dict:
-        print(query)
         gql_query = query
-        # gql_query = gql(query)
         results = self.client.execute(gql_query, variables)
-        print(results)
         return results
 
     def prepare(self, cls, name, variables, var_types):
@@ -109,4 +107,6 @@ class ObjectBase(object):
                     args[k] = v.from_json(obj[k])
                 else:
                     args[k] = obj[k]
+            else:
+                args[k] = None
         return cls(**args)
