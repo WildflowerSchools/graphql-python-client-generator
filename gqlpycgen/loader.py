@@ -1,6 +1,4 @@
-from gql import Client, gql
-from gql.transport.requests import RequestsHTTPTransport
-
+from gqlpycgen.client import Client
 
 schema_load_gql = """
 {
@@ -186,7 +184,6 @@ schema_load_gql = """
 
 
 def load_remote_schema(uri):
-    client = Client(transport=RequestsHTTPTransport(uri, use_json=True))
-    gql_query = gql(schema_load_gql)
-    schema = client.execute(gql_query)
+    client = Client(uri)
+    schema = client.execute(schema_load_gql)
     return schema.get("__schema")

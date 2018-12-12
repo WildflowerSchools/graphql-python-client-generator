@@ -10,17 +10,17 @@ LFTABTAB = '\n        '
 
 def resolve_type(typeObj):
     if typeObj.get("kind") == "LIST":
-        return f'List[{typeObj.get("ofType").get("kind")}]'
+        return 'List[{}]'.format(typeObj.get("ofType").get("kind"))
     if typeObj.get("kind") == "NON_NULL":
         ofType = typeObj.get("ofType")
         if ofType.get("kind") == "LIST":
-            return f'List[{resolve_type(ofType.get("ofType"))}]'
+            return 'List[{}]'.format(resolve_type(ofType.get("ofType")))
         else:
             return typeObj.get("ofType").get("name")
     elif typeObj.get("kind"):
         return typeObj.get("name")
     else:
-        raise Warning(f'type {typeObj} is not understood')
+        raise Warning('type {} is not understood'.format(typeObj))
         return None
 
 
@@ -31,7 +31,7 @@ class Field(object):
         self.gtype = gtype
 
     def __str__(self):
-        return f"{self.name}: '{self.gtype}'"
+        return "{}: '{}'".format(self.name, self.gtype)
 
 
 objectTemplate = Template("""class {{name}}(ObjectBase):
@@ -74,7 +74,7 @@ class Object(object):
             if ftype:
                 self.fields.append(Field(name, ftype))
             else:
-                raise Warning(f'field {name} on {self.name}, type not understood')
+                raise Warning('field {} on {}, type not understood'.format(name, self.name))
 
 
 class InputObject(Object):
@@ -93,15 +93,15 @@ class GraphEnum(object):
         self.values = [value.get("name") for value in typeObj.get("enumValues")]
 
     def toPython(self):
-        props = [f'    {value} = "{value}"' for value in self.values]
-        return f"""class {self.name}(Enum):
-{LF.join(props)}
+        props = ['    {value} = "{value}"'.format(value=value) for value in self.values]
+        return """class {}(Enum):
+{}
 
     def __str__(self):
         return str(self.value)
 
 
-"""
+""".format(self.name, LF.join(props))
 
 
 class Union(object):
@@ -111,7 +111,7 @@ class Union(object):
         self.possible_types = [pt.get("name") for pt in typeObj.get("possibleTypes")]
 
     def toPython(self):
-        return f"""{self.name} = Union[{", ".join(self.possible_types)}]\n"""
+        return """{} = Union[{}]\n""".format(self.name, ", ".join(self.possible_types))
 
 
 class Scalar(object):
@@ -120,7 +120,7 @@ class Scalar(object):
         self.name = typeObj.get("name")
 
     def toPython(self):
-        return f"{self.name} = NewType('{self.name}', str)\n"
+        return "{0} = NewType('{0}', str)\n".format(self.name)
 
 
 queryMethodTemplate = Template("""
@@ -157,7 +157,7 @@ class QueryMethod(object):
             if ftype:
                 self.args.append(Field(name, ftype))
             else:
-                raise Warning(f'arg {name} on {self.name}, type not understood')
+                raise Warning('arg {} on {}, type not understood'.format(name, self.name))
 
     def toPython(self):
         return queryMethodTemplate.render(**self.__dict__)
@@ -173,9 +173,9 @@ class Query(object):
                 self.methods.append(method)
 
     def toPython(self):
-        return f"""class Query(QueryBase):
-{LF.join([method.toPython() for method in self.methods])}
-"""
+        return """class Query(QueryBase):
+{}
+""".format(LF.join([method.toPython() for method in self.methods]))
 
 
 class Mutation(object):
@@ -188,9 +188,9 @@ class Mutation(object):
                 self.methods.append(method)
 
     def toPython(self):
-        return f"""class Mutation(MutationBase):
-{LF.join([method.toPython() for method in self.methods])}
-"""
+        return """class Mutation(MutationBase):
+{}
+""".format(LF.join([method.toPython() for method in self.methods]))
 
 
 def filter_enums(typeObjs):

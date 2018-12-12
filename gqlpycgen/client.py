@@ -1,4 +1,5 @@
 import json
+from collections import OrderedDict
 from uuid import uuid4
 
 import requests
@@ -25,18 +26,16 @@ class Client(object):
     def __init__(self, uri):
         self.uri = uri
 
-    def execute(self, query, variables, files=None):
-        payload = {
+    def execute(self, query, variables=None, files=None):
+        payload = OrderedDict({
             'query': query,
             'variables': variables or {},
-        }
+        })
         if files and files.containsFiles:
             data = {
                 'operations': json.dumps(payload),
                 'map': json.dumps(files.map),
             }
-            print(data)
-            print(files.list)
             request = requests.post(self.uri, data=data, files=files.list)
         else:
             request = requests.post(self.uri, json=payload)
