@@ -1,5 +1,5 @@
 import collections
-from typing import Dict, get_type_hints
+from typing import GenericMeta, Dict, get_type_hints, Union
 
 from gqlpycgen.client import Client
 
@@ -78,6 +78,10 @@ class ObjectBase(object):
         hints = get_type_hints(cls.__init__)
         for k, v in hints.items():
             if cls.TYPES[k].startswith("List["):
+                v = v.__args__[0]
+                if isinstance(v, GenericMeta):
+                    v = v.__args__[0]
+            if hasattr(v, "__args__"):
                 v = v.__args__[0]
             if hasattr(v, 'gql'):
                 bits.append(v.gql(k, indent + 1, None))

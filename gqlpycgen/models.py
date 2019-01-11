@@ -31,7 +31,7 @@ class Field(object):
         self.gtype = gtype
 
     def __str__(self):
-        return "{}: '{}'".format(self.name, self.gtype)
+        return "{}: '{}'=None".format(self.name, self.gtype)
 
 
 objectTemplate = Template("""class {{name}}(ObjectBase):
