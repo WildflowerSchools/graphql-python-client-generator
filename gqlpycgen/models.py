@@ -39,7 +39,7 @@ objectTemplate = Template("""class {{name}}(ObjectBase):
     TYPES = {{ '{' }}{% for field in fields %}"{{ field.name }}": "{{ field.gtype }}"{% if not loop.last %}, {% endif %}{% endfor %}{{ '}' }}
 
     def __init__(self, {% for field in fields %}{{ field }}{% if not loop.last %}, {% endif %}{% endfor %}):{% for field in fields %}
-        self.{{ field.name }}: '{{ field.gtype }}' = {{ field.name }}{% endfor %}
+        self.{{ field.name }}{% if py36plus: %}: '{{ field.gtype }}'{% endif %} = {{ field.name }}{% endfor %}
 
 
 
@@ -64,8 +64,8 @@ class Object(object):
                 deps.add(gtype)
         return list(deps)
 
-    def toPython(self):
-        return objectTemplate.render(**self.__dict__)
+    def toPython(self, py36plus=True):
+        return objectTemplate.render(**self.__dict__, py36plus=py36plus)
 
     def generate_argument_list(self, fields):
         for field in fields:
@@ -92,7 +92,7 @@ class GraphEnum(object):
         self.name = typeObj.get("name")
         self.values = [value.get("name") for value in typeObj.get("enumValues")]
 
-    def toPython(self):
+    def toPython(self, py36plus=True):
         props = ['    {value} = "{value}"'.format(value=value) for value in self.values]
         return """class {}(Enum):
 {}
@@ -110,7 +110,7 @@ class Union(object):
         self.name = typeObj.get("name")
         self.possible_types = [pt.get("name") for pt in typeObj.get("possibleTypes")]
 
-    def toPython(self):
+    def toPython(self, py36plus=True):
         return """{} = Union[{}]\n""".format(self.name, ", ".join(self.possible_types))
 
 
@@ -119,7 +119,7 @@ class Scalar(object):
     def __init__(self, typeObj):
         self.name = typeObj.get("name")
 
-    def toPython(self):
+    def toPython(self, py36plus=True):
         return "{0} = NewType('{0}', str)\n".format(self.name)
 
 
@@ -159,7 +159,7 @@ class QueryMethod(object):
             else:
                 raise Warning('arg {} on {}, type not understood'.format(name, self.name))
 
-    def toPython(self):
+    def toPython(self, py36plus=True):
         return queryMethodTemplate.render(**self.__dict__)
 
 
@@ -172,10 +172,10 @@ class Query(object):
                 method = QueryMethod(field)
                 self.methods.append(method)
 
-    def toPython(self):
+    def toPython(self, py36plus=True):
         return """class Query(QueryBase):
 {}
-""".format(LF.join([method.toPython() for method in self.methods]))
+""".format(LF.join([method.toPython(py36plus=py36plus) for method in self.methods]))
 
 
 class Mutation(object):
@@ -187,10 +187,10 @@ class Mutation(object):
                 method = QueryMethod(field)
                 self.methods.append(method)
 
-    def toPython(self):
+    def toPython(self, py36plus=True):
         return """class Mutation(MutationBase):
 {}
-""".format(LF.join([method.toPython() for method in self.methods]))
+""".format(LF.join([method.toPython(py36plus=py36plus) for method in self.methods]))
 
 
 def filter_enums(typeObjs):
