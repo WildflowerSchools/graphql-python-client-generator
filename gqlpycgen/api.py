@@ -25,7 +25,7 @@ class QueryBase(object):
     def prepare(self, cls, name, variables, var_types):
         if hasattr(cls, "gql"):
             gql = cls.gql(name, 1, variables)
-            args = ", ".join(["${}: {}".format(arg, var_types[arg]) for arg in variables.keys()])
+            args = ", ".join(["${}: {}".format(arg, var_types[arg].__name__) for arg in variables.keys()])
             if len(variables):
                 return "query %s (%s) { %s }" % (name, args, gql)
             else:
