@@ -1,5 +1,5 @@
 import collections
-from typing import GenericMeta, Dict, get_type_hints, Union
+from typing import Dict, get_type_hints, Union
 
 from jinja2 import Template
 
@@ -59,7 +59,7 @@ def property_to_gql(cls, name, value, indent, add_alias=False):
         value = value.__args__[0]
     if cls.TYPES[name].startswith("List["):
         value = value.__args__[0]
-        if isinstance(value, GenericMeta):
+        if hasattr(value, "__args__"):
             value = value.__args__[0]
             if hasattr(value, "__args__"):
                 value = value.__args__[0]
@@ -71,9 +71,8 @@ def property_to_gql(cls, name, value, indent, add_alias=False):
 
 class QueryBase(object):
 
-    def __init__(self, uri: str):
-        self.uri = uri
-        self.client = Client(uri)
+    def __init__(self, client: Client):
+        self.client = client
 
     def query(self, query: str, variables: Dict) -> Dict:
         gql_query = query
