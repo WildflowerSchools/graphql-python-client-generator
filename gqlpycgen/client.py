@@ -9,9 +9,7 @@ from gqlpycgen.utils import json_dumps
 class FileUpload(object):
 
     def __init__(self):
-        # {"file": ["variables.file"]}
         self.map = dict()
-        #     ('file', ('sandbox.py', open('sandbox.py', 'rb'), 'text/plain'))
         self.list = []
         self.containsFiles = False
 
@@ -48,8 +46,6 @@ class Client(object):
             except Exception as err:
                 # TODO log this error
                 raise Exception("invalid client_credentials")
-
-
 
     def execute(self, query, variables=None, files=None):
         payload = OrderedDict({

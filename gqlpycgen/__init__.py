@@ -13,10 +13,15 @@ def write_header(out):
     out.write('\n')
     out.write('\n')
     out.write("ID = NewType('ID', str)\n")
+    out.write("ID__Required = NewType('ID!', str)\n")
     out.write("Int = NewType('Int', int)\n")
+    out.write("Int__Required = NewType('Int!', int)\n")
     out.write("String = NewType('String', str)\n")
+    out.write("String__Required = NewType('String!', str)\n")
     out.write("Float = NewType('Float', float)\n")
+    out.write("Float__Required = NewType('Float!', float)\n")
     out.write("Boolean = NewType('Boolean', bool)\n")
+    out.write("Boolean__Required = NewType('Boolean!', bool)\n")
 
 
 def do_remote(uri, filename, py36plus=True):

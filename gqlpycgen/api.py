@@ -1,4 +1,5 @@
 import collections
+from datetime import datetime
 from typing import Dict, get_type_hints, Union
 
 from jinja2 import Template
@@ -78,6 +79,7 @@ class QueryBase(object):
         gql_query = query
         try:
             results = self.client.execute(gql_query, variables)
+            # TODO - handle error responses
             return results
         except Exception as err:
             print("-" * 80)
@@ -86,7 +88,6 @@ class QueryBase(object):
             print(err)
             print("-" * 80)
             return {"status": "err", "message": str(err)}
-
 
     def prepare(self, cls, name, variables, var_types):
         if hasattr(cls, "gql"):

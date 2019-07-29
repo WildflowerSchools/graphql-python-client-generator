@@ -14,14 +14,20 @@ def resolve_type(typeObj):
     if typeObj.get("kind") == "NON_NULL":
         ofType = typeObj.get("ofType")
         if ofType.get("kind") == "LIST":
+            # TODO - Not sure how to handle this one - I think the type system for this
+            # library needs a rework/refactor so it can handle theses cases more gracefully
             return 'List[{}]'.format(resolve_type(ofType.get("ofType")))
         else:
-            return typeObj.get("ofType").get("name")
+            return required(typeObj.get("ofType").get("name"))
     elif typeObj.get("kind"):
         return typeObj.get("name")
     else:
         raise Warning('type {} is not understood'.format(typeObj))
         return None
+
+
+def required(typeStr):
+    return "{}__Required".format(typeStr)
 
 
 class Field(object):
@@ -40,6 +46,10 @@ objectTemplate = Template("""class {{name}}(ObjectBase):
 
     def __init__(self, {% for field in fields %}{{ field }}{% if not loop.last %}, {% endif %}{% endfor %}):{% for field in fields %}
         self.{{ field.name }}{% if py36plus: %}: '{{ field.gtype }}'{% endif %} = {{ field.name }}{% endfor %}
+
+
+class {{name}}__Required({{name}}):
+    pass
 
 
 
@@ -94,11 +104,14 @@ class GraphEnum(object):
 
     def toPython(self, py36plus=True):
         props = ['    {value} = "{value}"'.format(value=value) for value in self.values]
-        return """class {}(Enum):
-{}
+        return """class {0}(Enum):
+{1}
 
     def __str__(self):
         return str(self.value)
+
+
+{0}__Required = {0}
 
 
 """.format(self.name, LF.join(props))
@@ -111,7 +124,7 @@ class Union(object):
         self.possible_types = [pt.get("name") for pt in typeObj.get("possibleTypes")]
 
     def toPython(self, py36plus=True):
-        return """{} = Union[{}]\n""".format(self.name, ", ".join(self.possible_types))
+        return """{0} = Union[{1}]\n{0}__Required = Union[{1}]\n""".format(self.name, ", ".join(self.possible_types))
 
 
 class Scalar(object):
@@ -120,7 +133,7 @@ class Scalar(object):
         self.name = typeObj.get("name")
 
     def toPython(self, py36plus=True):
-        return "{0} = NewType('{0}', str)\n".format(self.name)
+        return "{0} = NewType('{0}', str)\n{0}__Required = NewType('{0}', str)\n".format(self.name)
 
 
 queryMethodTemplate = Template("""
