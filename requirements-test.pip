@@ -1,0 +1,10 @@
+# pytest==3.0.6
+# pytest-cov==2.4.0
+# pytest-mock==1.5.0
+# pylint==1.6.5
+# httpretty==0.8.14
+
+coverage
+mock
+nose
+rednose
