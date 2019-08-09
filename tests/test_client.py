@@ -4,6 +4,14 @@ from mock import patch, MagicMock
 
 from gqlpycgen import client
 
+CLIENT_CREDS = {
+    'token_uri': 'test.com',
+    'audience': 'the queen',
+    'client_id': 'foo',
+    'client_secret': 'bar',
+}
+
+
 
 class ClientTest(TestCase):
 
@@ -17,13 +25,7 @@ class ClientTest(TestCase):
 
     @patch('requests.post')
     def test_client_init2(self, post_mk):
-        client_creds = {
-            'token_uri': 'test.com',
-            'audience': 'the queen',
-            'client_id': 'foo',
-            'client_secret': 'bar',
-        }
-        c = client.Client(uri='test.com', client_credentials=client_creds)
+        c = client.Client(uri='test.com', client_credentials=CLIENT_CREDS)
 
         post_mk.assert_called_once_with('test.com', {
             "audience": 'the queen',
@@ -40,23 +42,11 @@ class ClientTest(TestCase):
     @patch('requests.post', return_value=None)
     def test_client_init4(self, post_mk):
         with self.assertRaises(Exception):
-            client_creds = {
-                'token_uri': 'test.com',
-                'audience': 'the queen',
-                'client_id': 'foo',
-                'client_secret': 'bar',
-            }
-            c = client.Client(uri='test.com', client_credentials=client_creds)
+            c = client.Client(uri='test.com', client_credentials=CLIENT_CREDS)
 
     @patch('requests.post')
     def test_client_init5(self, post_mk):
         post_mk.return_value.json = MagicMock()
         post_mk.return_value.json.return_value.get.return_value = None
         with self.assertRaises(Exception):
-            client_creds = {
-                'token_uri': 'test.com',
-                'audience': 'the queen',
-                'client_id': 'foo',
-                'client_secret': 'bar',
-            }
-            c = client.Client(uri='test.com', client_credentials=client_creds)
+            c = client.Client(uri='test.com', client_credentials=CLIENT_CREDS)
