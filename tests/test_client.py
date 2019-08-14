@@ -50,3 +50,8 @@ class ClientTest(TestCase):
         post_mk.return_value.json.return_value.get.return_value = None
         with self.assertRaises(Exception):
             c = client.Client(uri='test.com', client_credentials=CLIENT_CREDS)
+
+    @patch('requests.post')
+    def test_client_exec1(self, post_mk):
+        c = client.Client(uri='test.com', client_credentials=CLIENT_CREDS)
+        c.execute
