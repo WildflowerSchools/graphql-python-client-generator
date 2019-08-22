@@ -1,2 +1,5 @@
 __pycache__
 gqlpycgen.egg-info
+.cache
+.coverage
+htmlcov
