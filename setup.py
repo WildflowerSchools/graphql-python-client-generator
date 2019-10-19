@@ -7,6 +7,12 @@ VERSION = open(os.path.join(BASEDIR, 'VERSION')).read().strip()
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(BASEDIR))
 
+test_dependencies = [
+    'coverage',
+    'mock',
+    'nose',
+    'rednose'
+]
 
 setup(
     name='wf-gqlpycgen',
@@ -23,12 +29,10 @@ setup(
         'click>=6.7',
         'requests==2.21.0'
     ],
-    tests_require = [
-        'coverage',
-        'mock',
-        'nose',
-        'rednose'
-    ]
+    tests_require = test_dependencies,
+    extras_require = {
+        'test': test_dependencies
+    },
     entry_points={
         'console_scripts': [
             'gqlpycgen=gqlpycgencli:cli',
