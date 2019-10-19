@@ -5,9 +5,9 @@ BASEDIR = os.path.dirname(os.path.abspath(__file__))
 VERSION = open(os.path.join(BASEDIR, 'VERSION')).read().strip()
 
 BASE_DEPENDENCIES = [
-        'Jinja2==2.10',
-        'click>=6.7',
-        'requests==2.21.0'
+    'Jinja2==2.10',
+    'click>=6.7',
+    'requests==2.21.0'
 ]
 
 TEST_DEPENDENCIES = [
