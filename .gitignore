@@ -3,3 +3,4 @@ gqlpycgen.egg-info
 .cache
 .coverage
 htmlcov
+dist
