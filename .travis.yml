@@ -9,7 +9,7 @@ python:
 #   - docker
 
 install:
-  - pip install -r requirements-test.pip
+  - pip install .[test]
 
 script:
   - sh run-tests.sh
