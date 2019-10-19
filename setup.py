@@ -21,8 +21,14 @@ setup(
     install_requires=[
         'Jinja2==2.10',
         'click>=6.7',
-        'requests==2.21.0'    
+        'requests==2.21.0'
     ],
+    tests_require = [
+        'coverage',
+        'mock',
+        'nose',
+        'rednose'
+    ]
     entry_points={
         'console_scripts': [
             'gqlpycgen=gqlpycgencli:cli',
