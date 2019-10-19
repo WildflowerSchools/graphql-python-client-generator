@@ -23,7 +23,7 @@ os.chdir(os.path.normpath(BASEDIR))
 
 
 setup(
-    name='gqlpycgen',
+    name='wf-gqlpycgen',
     version=VERSION,
     packages=find_packages(),
     include_package_data=True,
