@@ -4,15 +4,21 @@ from setuptools import setup, find_packages
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 VERSION = open(os.path.join(BASEDIR, 'VERSION')).read().strip()
 
-# allow setup.py to be run from any path
-os.chdir(os.path.normpath(BASEDIR))
+BASE_DEPENDENCIES = [
+        'Jinja2==2.10',
+        'click>=6.7',
+        'requests==2.21.0'
+]
 
-test_dependencies = [
+TEST_DEPENDENCIES = [
     'coverage',
     'mock',
     'nose',
     'rednose'
 ]
+
+# allow setup.py to be run from any path
+os.chdir(os.path.normpath(BASEDIR))
 
 setup(
     name='wf-gqlpycgen',
@@ -24,14 +30,10 @@ setup(
     url='https://github.com/Wildflowerschools/graphql-python-client-generator',
     author='optimuspaul',
     author_email='paul.decoursey@wildflowerschools.org',
-    install_requires=[
-        'Jinja2==2.10',
-        'click>=6.7',
-        'requests==2.21.0'
-    ],
-    tests_require = test_dependencies,
+    install_requires=BASE_DEPENDENCIES,
+    tests_require = TEST_DEPENDENCIES,
     extras_require = {
-        'test': test_dependencies
+        'test': TEST_DEPENDENCIES
     },
     entry_points={
         'console_scripts': [
