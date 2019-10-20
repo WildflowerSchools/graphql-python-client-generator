@@ -4,15 +4,18 @@ from uuid import uuid4
 import requests
 
 import tenacity
+import logging
 
 from gqlpycgen.utils import json_dumps
+
+logger = logging.getLogger(__name__)
 
 exponential_retry = tenacity.retry(
     stop = tenacity.stop_after_attempt(4),
     wait = tenacity.wait_exponential(multiplier=0.2/2),
-    # before = tenacity.before_log(logger, logging.DEBUG),
-    # after = tenacity.after_log(logger, logging.DEBUG),
-    # before_sleep = tenacity.before_sleep_log(logger, logging.WARNING)
+    before = tenacity.before_log(logger, logging.DEBUG),
+    after = tenacity.after_log(logger, logging.DEBUG),
+    before_sleep = tenacity.before_sleep_log(logger, logging.WARNING)
 )
 
 
