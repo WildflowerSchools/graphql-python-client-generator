@@ -62,7 +62,6 @@ class Client(object):
 
     @exponential_retry
     def execute(self, query, variables=None, files=None):
-        logger.info('Sending data to Honeycomb')
         payload = OrderedDict({
             'query': query,
             'variables': variables or {},
