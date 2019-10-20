@@ -7,7 +7,8 @@ VERSION = open(os.path.join(BASEDIR, 'VERSION')).read().strip()
 BASE_DEPENDENCIES = [
     'Jinja2>=2.10',
     'click>=6.7',
-    'requests>=2.21.0'
+    'requests>=2.21.0',
+    'tenacity>=5.1.1'
 ]
 
 TEST_DEPENDENCIES = [
