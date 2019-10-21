@@ -3,27 +3,25 @@ from setuptools import setup, find_packages
 
 BASEDIR = os.path.dirname(os.path.abspath(__file__))
 VERSION = open(os.path.join(BASEDIR, 'VERSION')).read().strip()
-REQUIREMENTS = []
-DEPENDENCY_LINKS = []
 
+BASE_DEPENDENCIES = [
+    'Jinja2>=2.10',
+    'click>=6.7',
+    'requests>=2.21.0'
+]
 
-with open(os.path.join(BASEDIR, 'requirements.pip')) as fp:
-    lines = fp.readlines()
-    for line in lines:
-        line = line.strip()
-        if ("http://" in line or "https://" in line or "ssh://" in line) and "#egg=" in line:
-            parts = line.split("#egg=")
-            REQUIREMENTS.append(parts[-1])
-            DEPENDENCY_LINKS.append(line)
-        elif len(line) and line[0] != "#" and line[0] != "-":
-            REQUIREMENTS.append(line)
+TEST_DEPENDENCIES = [
+    'coverage',
+    'mock',
+    'nose',
+    'rednose'
+]
 
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(BASEDIR))
 
-
 setup(
-    name='gqlpycgen',
+    name='wf-gqlpycgen',
     version=VERSION,
     packages=find_packages(),
     include_package_data=True,
@@ -32,8 +30,11 @@ setup(
     url='https://github.com/Wildflowerschools/graphql-python-client-generator',
     author='optimuspaul',
     author_email='paul.decoursey@wildflowerschools.org',
-    install_requires=REQUIREMENTS,
-    dependency_links=DEPENDENCY_LINKS,
+    install_requires=BASE_DEPENDENCIES,
+    tests_require = TEST_DEPENDENCIES,
+    extras_require = {
+        'test': TEST_DEPENDENCIES
+    },
     entry_points={
         'console_scripts': [
             'gqlpycgen=gqlpycgencli:cli',
