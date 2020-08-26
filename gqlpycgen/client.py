@@ -18,7 +18,7 @@ exponential_retry = tenacity.retry(
     before_sleep = tenacity.before_sleep_log(logger, logging.WARNING)
 )
 
-HTTP_REQUEST_TIMEOUT = 10 # HTTP request timeout in seconds
+DEFAULT_HTTP_REQUEST_TIMEOUT = 30 # HTTP request timeout in seconds
 
 class FileUpload(object):
 
@@ -36,7 +36,7 @@ class FileUpload(object):
 
 class Client(object):
 
-    def __init__(self, uri, accessToken=None, client_credentials=None):
+    def __init__(self, uri, accessToken=None, client_credentials=None, timeout=DEFAULT_HTTP_REQUEST_TIMEOUT):
         self.uri = uri
         self.accessToken = accessToken
         self.client_credentials = client_credentials
@@ -54,7 +54,7 @@ class Client(object):
                         "client_id": client_credentials["client_id"],
                         "client_secret": client_credentials["client_secret"]
                     },
-                    timeout=HTTP_REQUEST_TIMEOUT
+                    timeout=timeout
                 )
                 self.accessToken = auth_response.json().get('access_token')
                 if self.accessToken:
@@ -66,7 +66,7 @@ class Client(object):
                 raise Exception("invalid client_credentials")
 
     @exponential_retry
-    def execute(self, query, variables=None, files=None):
+    def execute(self, query, variables=None, files=None, timeout=DEFAULT_HTTP_REQUEST_TIMEOUT):
         payload = OrderedDict({
             'query': query,
             'variables': variables or {},
@@ -76,9 +76,9 @@ class Client(object):
                 'operations': json_dumps(payload),
                 'map': json_dumps(files.map),
             }
-            request = requests.post(self.uri, data=data, files=files.list, headers=self.headers_files, timeout=HTTP_REQUEST_TIMEOUT)
+            request = requests.post(self.uri, data=data, files=files.list, headers=self.headers_files, timeout=timeout)
         else:
-            request = requests.post(self.uri, data=json_dumps(payload), headers=self.headers, timeout=HTTP_REQUEST_TIMEOUT)
+            request = requests.post(self.uri, data=json_dumps(payload), headers=self.headers, timeout=timeout)
         request.raise_for_status()
         result = request.json()
         if "errors" in result:
