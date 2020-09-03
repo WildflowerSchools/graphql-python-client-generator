@@ -5,6 +5,7 @@ import requests
 
 import tenacity
 import logging
+import time
 
 from gqlpycgen.utils import json_dumps
 
@@ -67,20 +68,40 @@ class Client(object):
 
     @exponential_retry
     def execute(self, query, variables=None, files=None, timeout=DEFAULT_HTTP_REQUEST_TIMEOUT):
+        overall_start = time.time()
+        logger.debug('Client execute request body JSON:\n{}'.format(query))
+        logger.debug('Client execute request variables JSON:\n{}'.format(json_dumps(variables)))
         payload = OrderedDict({
             'query': query,
             'variables': variables or {},
         })
         if files and files.containsFiles:
+            file_processing_start = time.time()
             data = {
                 'operations': json_dumps(payload),
                 'map': json_dumps(files.map),
             }
+            file_processing_time = time.time() - file_processing_start
+            post_start = time.time()
             request = requests.post(self.uri, data=data, files=files.list, headers=self.headers_files, timeout=timeout)
+            post_time = time.time() - post_start
         else:
-            request = requests.post(self.uri, data=json_dumps(payload), headers=self.headers, timeout=timeout)
+            file_processing_time = 0.0
+            data = json_dumps(payload)
+            post_start = time.time()
+            request = requests.post(self.uri, data=data, headers=self.headers, timeout=timeout)
+            post_time = time.time() - post_start
         request.raise_for_status()
+        json_extraction_start = time.time()
         result = request.json()
+        json_extraction_time = time.time() - json_extraction_start
         if "errors" in result:
             return result.get("errors")
+        overall_time = time.time() - overall_start
+        logger.info('GraphQL client execute operation completed in {:.1f} ms (file processing: {:.1f} ms, POST operation: {:.1f} ms, JSON extraction: {:.1f} ms)'.format(
+            overall_time*1000,
+            file_processing_time*1000,
+            post_time*1000,
+            json_extraction_time*1000
+        ))
         return result.get("data")

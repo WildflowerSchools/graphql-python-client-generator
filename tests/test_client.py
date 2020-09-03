@@ -32,7 +32,7 @@ class ClientTest(TestCase):
             "grant_type": "client_credentials",
             "client_id": 'foo',
             "client_secret": 'bar',
-        })
+        }, timeout=30)
 
     @patch('requests.post')
     def test_client_init3(self, post_mk):
