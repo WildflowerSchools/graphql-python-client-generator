@@ -64,7 +64,7 @@ class Client(object):
                     raise Exception("invalid client_credentials")
             except Exception as err:
                 # TODO log this error
-                raise Exception("invalid client_credentials")
+                raise Exception("invalid client_credentials") from err
 
     @exponential_retry
     def execute(self, query, variables=None, files=None, timeout=DEFAULT_HTTP_REQUEST_TIMEOUT):
