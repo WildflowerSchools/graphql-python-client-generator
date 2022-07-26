@@ -63,7 +63,9 @@ class Client(object):
                 else:
                     raise Exception("invalid client_credentials")
             except Exception as err:
-                # TODO log this error
+                import traceback
+                logger.error("An exception occured during Authorization")
+                traceback.print_exception(err)
                 raise Exception("invalid client_credentials") from err
 
     @exponential_retry
