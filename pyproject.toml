@@ -4,7 +4,7 @@ dynamic = ["version"]
 
 [tool.poetry]
 name = "wf-gqlpycgen"
-version = "0.7.3"
+version = "0.7.4"
 description = ""
 authors = ["Paul DeCoursey <paul.decoursey@wildflowerschools.org>"]
 maintainers = ["Benjamin Jaffe-Talberg <ben.talberg@wildflowerschools.org>"]
