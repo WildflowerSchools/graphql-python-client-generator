@@ -18,7 +18,6 @@ def decode(val):
 
 
 class CustomJsonEncoder(json.JSONEncoder):
-
     def default(self, obj):
         if isinstance(obj, bytes):
             return obj.decode("utf8")

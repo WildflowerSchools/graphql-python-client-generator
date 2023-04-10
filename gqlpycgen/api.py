@@ -16,7 +16,8 @@ def timestamp():
     return datetime.utcnow().strftime(ISO_FORMAT)
 
 
-union_template = Template("""{{ pre_prefix }}{{ name }} {
+union_template = Template(
+    """{{ pre_prefix }}{{ name }} {
 {{ prefix }}{% for type_obj in types %}... on {{ type_obj.__name__ }} {{ '{' }}
 {% for k, v in get_type_hints(type_obj.__init__).items() %}
 {{ property_to_gql(type_obj, k, v, indent + 1, True) }}
@@ -24,14 +25,15 @@ union_template = Template("""{{ pre_prefix }}{{ name }} {
 {{ prefix }}{{ '}' }}
 {% endfor %}
 }
-""")
+"""
+)
 
 
 def union_gql(union, name, indent):
     if indent > MAX_DEPTH:
         return ""
-    prefix = ("    " * indent)
-    pre_prefix = ("    " * (indent - 1))
+    prefix = "    " * indent
+    pre_prefix = "    " * (indent - 1)
     types = union.__args__[:-1]
     # TODO - known issue, for the case where two of the types have a property with the same name and the don't have the exact same type it blows up
     #   keep in mind String != String!
@@ -64,14 +66,13 @@ def property_to_gql(cls, name, value, indent, add_alias=False):
             value = value.__args__[0]
             if hasattr(value, "__args__"):
                 value = value.__args__[0]
-    if hasattr(value, 'gql'):
+    if hasattr(value, "gql"):
         return value.gql(name, indent + 1, None)
     else:
         return ("    " * indent) + name
 
 
 class QueryBase(object):
-
     def __init__(self, client: Client):
         self.client = client
 
@@ -103,7 +104,6 @@ class QueryBase(object):
 
 
 class MutationBase(QueryBase):
-
     def prepare(self, cls, name, variables, var_types):
         if hasattr(cls, "gql"):
             gql = cls.gql(name, 1, variables)
@@ -117,7 +117,6 @@ class MutationBase(QueryBase):
 
 
 class ObjectBase(object):
-
     def to_json(self) -> Dict:
         result = {}
         for k in self.FIELDS:
@@ -137,10 +136,12 @@ class ObjectBase(object):
         if indent > MAX_DEPTH:
             return ""
         bits = []
-        prefix = ("    " * indent)
-        pre_prefix = ("    " * (indent - 1))
+        prefix = "    " * indent
+        pre_prefix = "    " * (indent - 1)
         if variables and len(variables):
-            bits.append(pre_prefix + name + "(" + ", ".join(["{}: ${}".format(arg, arg) for arg in variables.keys()]) + ") {")
+            bits.append(
+                pre_prefix + name + "(" + ", ".join(["{}: ${}".format(arg, arg) for arg in variables.keys()]) + ") {"
+            )
         else:
             bits.append(pre_prefix + name + " {")
         hints = get_type_hints(cls.__init__)
@@ -160,13 +161,13 @@ class ObjectBase(object):
                 if cls.TYPES[k].startswith("List["):
                     values = obj[k]
                     v = v.__args__[0]
-                    if hasattr(v, 'from_json'):
+                    if hasattr(v, "from_json"):
                         args[k] = []
                         for value in values:
                             args[k].append(v.from_json(value))
                     else:
                         args[k] = values
-                elif hasattr(v, 'from_json'):
+                elif hasattr(v, "from_json"):
                     args[k] = v.from_json(obj[k])
                 else:
                     args[k] = obj[k]

@@ -3,26 +3,26 @@ import json
 from jinja2 import Template
 
 
-LF = '\n'
-LFLF = '\n\n'
-LFTABTAB = '\n        '
+LF = "\n"
+LFLF = "\n\n"
+LFTABTAB = "\n        "
 
 
 def resolve_type(typeObj):
     if typeObj.get("kind") == "LIST":
-        return 'List[{}]'.format(resolve_type(typeObj.get("ofType")))
+        return "List[{}]".format(resolve_type(typeObj.get("ofType")))
     if typeObj.get("kind") == "NON_NULL":
         ofType = typeObj.get("ofType")
         if ofType.get("kind") == "LIST":
             # TODO - Not sure how to handle this one - I think the type system for this
             # library needs a rework/refactor so it can handle theses cases more gracefully
-            return 'List[{}]'.format(resolve_type(ofType.get("ofType")))
+            return "List[{}]".format(resolve_type(ofType.get("ofType")))
         else:
             return required(typeObj.get("ofType").get("name"))
     elif typeObj.get("kind"):
         return typeObj.get("name")
     else:
-        raise Warning('type {} is not understood'.format(typeObj))
+        raise Warning("type {} is not understood".format(typeObj))
         return None
 
 
@@ -31,7 +31,6 @@ def required(typeStr):
 
 
 class Field(object):
-
     def __init__(self, name, gtype):
         self.name = name
         self.gtype = gtype
@@ -40,7 +39,8 @@ class Field(object):
         return "{}: '{}'=None".format(self.name, self.gtype)
 
 
-objectTemplate = Template("""class {{name}}(ObjectBase):
+objectTemplate = Template(
+    """class {{name}}(ObjectBase):
     FIELDS = [{% for name in field_names %}"{{ name }}", {% endfor %}]
     TYPES = {{ '{' }}{% for field in fields %}"{{ field.name }}": "{{ field.gtype }}"{% if not loop.last %}, {% endif %}{% endfor %}{{ '}' }}
 
@@ -53,11 +53,11 @@ class {{name}}__Required({{name}}):
 
 
 
-""")
+"""
+)
 
 
 class Object(object):
-
     def __init__(self, typeObj):
         self.name = typeObj.get("name")
         self.field_names = [field.get("name") for field in typeObj.get("fields")]
@@ -84,11 +84,10 @@ class Object(object):
             if ftype:
                 self.fields.append(Field(name, ftype))
             else:
-                raise Warning('field {} on {}, type not understood'.format(name, self.name))
+                raise Warning("field {} on {}, type not understood".format(name, self.name))
 
 
 class InputObject(Object):
-
     def __init__(self, typeObj):
         self.name = typeObj.get("name")
         self.field_names = [field.get("name") for field in typeObj.get("inputFields")]
@@ -97,7 +96,6 @@ class InputObject(Object):
 
 
 class GraphEnum(object):
-
     def __init__(self, typeObj):
         self.name = typeObj.get("name")
         self.values = [value.get("name") for value in typeObj.get("enumValues")]
@@ -114,11 +112,12 @@ class GraphEnum(object):
 {0}__Required = {0}
 
 
-""".format(self.name, LF.join(props))
+""".format(
+            self.name, LF.join(props)
+        )
 
 
 class Union(object):
-
     def __init__(self, typeObj):
         self.name = typeObj.get("name")
         self.possible_types = [pt.get("name") for pt in typeObj.get("possibleTypes")]
@@ -128,7 +127,6 @@ class Union(object):
 
 
 class Scalar(object):
-
     def __init__(self, typeObj):
         self.name = typeObj.get("name")
 
@@ -136,7 +134,8 @@ class Scalar(object):
         return "{0} = NewType('{0}', str)\n{0}__Required = NewType('{0}', str)\n".format(self.name)
 
 
-queryMethodTemplate = Template("""
+queryMethodTemplate = Template(
+    """
     def {{name}}(self, {% for arg in args %}{{ arg }}{% if not loop.last %}, {% endif %}{% endfor %}) -> {{ returns }}:
         args = [{% for arg in args %}"{{ arg }}"{% if not loop.last %}, {% endif %}{% endfor %}]
         variables = dict()
@@ -152,11 +151,11 @@ queryMethodTemplate = Template("""
         query = self.prepare({{ returns }}, "{{ name }}", variables, var_types)
         results = self.query(query, variables)
         return {{ returns }}.from_json(results.get("{{ name }}"))
-""")
+"""
+)
 
 
 class QueryMethod(object):
-
     def __init__(self, typeObj):
         self.name = typeObj.get("name")
         self.returns = resolve_type(typeObj.get("type"))
@@ -170,14 +169,13 @@ class QueryMethod(object):
             if ftype:
                 self.args.append(Field(name, ftype))
             else:
-                raise Warning('arg {} on {}, type not understood'.format(name, self.name))
+                raise Warning("arg {} on {}, type not understood".format(name, self.name))
 
     def toPython(self, py36plus=True):
         return queryMethodTemplate.render(**self.__dict__)
 
 
 class Query(object):
-
     def __init__(self, typeObj):
         self.methods = []
         for field in typeObj.get("fields"):
@@ -188,11 +186,12 @@ class Query(object):
     def toPython(self, py36plus=True):
         return """class Query(QueryBase):
 {}
-""".format(LF.join([method.toPython(py36plus=py36plus) for method in self.methods]))
+""".format(
+            LF.join([method.toPython(py36plus=py36plus) for method in self.methods])
+        )
 
 
 class Mutation(object):
-
     def __init__(self, typeObj):
         self.methods = []
         for field in typeObj.get("fields"):
@@ -203,7 +202,9 @@ class Mutation(object):
     def toPython(self, py36plus=True):
         return """class Mutation(MutationBase):
 {}
-""".format(LF.join([method.toPython(py36plus=py36plus) for method in self.methods]))
+""".format(
+            LF.join([method.toPython(py36plus=py36plus) for method in self.methods])
+        )
 
 
 def filter_enums(typeObjs):
@@ -220,7 +221,11 @@ def filter_input_objects(typeObjs):
 
 def filter_objects(typeObjs):
     for typeObj in typeObjs:
-        if not typeObj.get("name").startswith("_") and typeObj.get("kind") == "OBJECT" and typeObj.get("name") not in ["Query", "Mutation"]:
+        if (
+            not typeObj.get("name").startswith("_")
+            and typeObj.get("kind") == "OBJECT"
+            and typeObj.get("name") not in ["Query", "Mutation"]
+        ):
             yield typeObj
 
 
@@ -238,5 +243,9 @@ def filter_unions(typeObjs):
 
 def filter_scalars(typeObjs):
     for typeObj in typeObjs:
-        if not typeObj.get("name").startswith("_") and typeObj.get("kind") == "SCALAR" and typeObj.get("name") not in ["String", "Int", "Boolean", "Float", "ID"]:
+        if (
+            not typeObj.get("name").startswith("_")
+            and typeObj.get("kind") == "SCALAR"
+            and typeObj.get("name") not in ["String", "Int", "Boolean", "Float", "ID"]
+        ):
             yield typeObj
