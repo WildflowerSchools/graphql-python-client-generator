@@ -1,10 +1,10 @@
 from collections import OrderedDict
 from uuid import uuid4
 
-import requests
-
-import tenacity
+from cachetools import TTLCache
 import logging
+import requests
+import tenacity
 import time
 
 from gqlpycgen.utils import json_dumps
@@ -20,6 +20,7 @@ exponential_retry = tenacity.retry(
 )
 
 DEFAULT_HTTP_REQUEST_TIMEOUT = 30 # HTTP request timeout in seconds
+
 
 class FileUpload(object):
 
@@ -39,34 +40,54 @@ class Client(object):
 
     def __init__(self, uri, accessToken=None, client_credentials=None, timeout=DEFAULT_HTTP_REQUEST_TIMEOUT):
         self.uri = uri
-        self.accessToken = accessToken
         self.client_credentials = client_credentials
+        self.timeout = timeout
         self.headers = {'Content-Type': 'application/json'}
-        self.headers_files = {}
-        if self.accessToken:
-            self.headers["Authorization"] = self.headers_files["Authorization"] = f'bearer {self.accessToken}'
-        elif self.accessToken is None and self.client_credentials:
-            try:
-                auth_response = requests.post(
-                    client_credentials["token_uri"],
-                    {
-                        "audience": client_credentials["audience"],
-                        "grant_type": "client_credentials",
-                        "client_id": client_credentials["client_id"],
-                        "client_secret": client_credentials["client_secret"]
-                    },
-                    timeout=timeout
-                )
-                self.accessToken = auth_response.json().get('access_token')
-                if self.accessToken:
-                    self.headers["Authorization"] = self.headers_files["Authorization"] = f'bearer {self.accessToken}'
-                else:
-                    raise Exception("invalid client_credentials")
-            except Exception as err:
-                import traceback
-                logger.error("An exception occured during Authorization")
-                traceback.print_exception(err)
-                raise Exception("invalid client_credentials") from err
+
+        self.tokens = {}
+        if accessToken is not None:
+            self.tokens['access_token'] = accessToken
+
+        if accessToken is None and self.client_credentials is None:
+            raise ValueError("Cannot instantiate Honeycomb Client without an accessToken or client_credentials")
+
+    def refresh_token(self):
+        try:
+            auth_response = requests.post(
+                self.client_credentials["token_uri"],
+                {
+                    "audience": self.client_credentials["audience"],
+                    "grant_type": "client_credentials",
+                    "client_id": self.client_credentials["client_id"],
+                    "client_secret": self.client_credentials["client_secret"]
+                },
+                timeout=self.timeout
+            ).json()
+
+            access_token = auth_response.get('access_token', None)
+            if access_token is None:
+                raise Exception("invalid client_credentials")
+
+            # Refresh token once TTL is less than 5 minutes
+            self.tokens = TTLCache(maxsize=1, ttl=auth_response.get('expires_in') - 300)
+            self.tokens['access_token'] = access_token
+
+        except Exception as err:
+            import traceback
+            logger.error("An exception occured during Authorization")
+            traceback.print_exception(err)
+            raise Exception("invalid client_credentials") from err
+
+    @property
+    def headers(self):
+        if 'access_token' not in self.tokens:
+            self.refresh_token()
+
+        return {"Authorization": f"Bearer {self.tokens['access_token']}", **self._headers}
+
+    @headers.setter
+    def headers(self, header_dict: dict):
+        self._headers = header_dict
 
     @exponential_retry
     def execute(self, query, variables=None, files=None, timeout=DEFAULT_HTTP_REQUEST_TIMEOUT):
@@ -85,7 +106,7 @@ class Client(object):
             }
             file_processing_time = time.time() - file_processing_start
             post_start = time.time()
-            request = requests.post(self.uri, data=data, files=files.list, headers=self.headers_files, timeout=timeout)
+            request = requests.post(self.uri, data=data, files=files.list, headers=self.headers, timeout=timeout)
             post_time = time.time() - post_start
         else:
             file_processing_time = 0.0
