@@ -82,7 +82,7 @@ class Client(object):
         except Exception as err:
             import traceback
 
-            logger.error("An exception occured during Authorization")
+            logger.error("An exception occurred during Authorization")
             traceback.print_exception(err)
             raise Exception("invalid client_credentials") from err
 
